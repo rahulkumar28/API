@@ -1,0 +1,3914 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SMS API",
+    "description": "# Overview\n`SMS API` bundle provides set of Restful APIs to perform various operation on resources and services available from SMSC platform. allows you to send and receive text messages to Short Message Entities through simple RESTful APIs.\n  \n  * Programmatically send and receive high volume of SMS anywhere in the world.\n  * Build apps that scale with the web technologies that you are already using.\n  * Send SMS with low latency and high delivery rates.\n  * Receive SMS for free using SMS-enabled local numbers in countries around the world.\n  * Only pay for what you use, nothing more.\n  \n## Taxonomy \nFollowing reference may be used in the context of Messaging APIs \n\n  * **SME:** Short Message Entity application capable of sending and receiving A2P and P2A SMS over API interface. References can be made as **External Entity**, **Third Party**, **3PP**, **Application Endpoint**\n  \n  * **ME:** Mobile Equipment/Terminals capable of sending and receciving SMS over Telco's Access Network. References can be made as **Mobile Devices**, **ME**, **Mobile Terminal**, **Devices**, **Device Endpoints**\n  \n  * **Tenant:** Falls under Organizational heiarchy for scoping purpose. An entity that comes directly under `root` user/organization. Platform provides various configuration and/or properties that will be available at Tenant level. All childs by default will inherit from their parent unless overrided. References can be made as **Parent**\n  \n  * **SubTenant:** Falls under Organizational heiarchy for scoping purpose. An entity that comes directly under a **Tenant**. Platform provides various configuration and/or properties that will be available at Tenant and Subtenant level. All childs by default will inherit from their parent unless overrided. References can be made as **Parent**\n  \n  * **Account:** An account allows to define the interface/Connectivity that a Tenant or SubTenant can use to connect with registered credentials\n  \n  * **MT-SMS:** A mobile terminated SMS that an SME application sends to an ME(Mobile Equipment) or Device. Reference can be made as **Terminating SMS**, **A2P SMS**, **A2D**\n  \n  * **MO-SMS:** A mobile originated SMS that an ME(Mobile Equipment) or Device initiates towards and SME application. Reference can be made as **Originating SMS**, **P2A SMS**, **D2A**\n\n## Security \nThe platform supports both `Basic` and `OAuth2` authentication. It is encouraged to use `OAuth2` authentication for enhanced and secure way of interacting with the platform. Additionally the authorization module allows to control access to specific resources/API that are provided by the platform. The API Consumer/Endpoint should be whitelisted and authorization vector should be defined appropriately for the client account\n## Getting Started\nBelow are the steps to get started with the `SMS API`.\n\n  1. Get the account created on the platform with Client credentials\n  2. Get the authorization vector defined for set of APIs for the client account\n  3. Generate an OAuth2 token using your client key by using token API. The token returned in response should be renewed as per the policy\n    <pre><code class=\"language-sh\">{\n        \"accessToken\": \"string\",\n        \"tokenType\": \"string\",\n        \"expiresIn\": \"string\"\n        }\n      </code></pre>\n\n        _Note: Register should be done before using APIs_\n  \n  4. Start using the API",
+    "contact": {
+      "name": "Sixdee",
+      "url": "https://www.6dtech.co.in",
+      "email": "support@6dtech.co.in"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://api.xyz.com:8080/msg"
+    },
+    {
+      "url": "http://dev-api.xyz.com:8080/msg"
+    }
+  ],
+  "tags": [
+    {
+      "name": "AUTHENTICATION"
+    },
+    {
+      "name": "MESSAGING"
+    },
+    {
+      "name": "MESSAGE NOTIFY"
+    },
+    {
+      "name": "OPERATIONAL"
+    },
+    {
+      "name": "REPORTING"
+    }
+  ],
+  "paths": {
+    "/oauth/token": {
+      "post": {
+        "tags": [
+          "AUTHENTICATION"
+        ],
+        "summary": "To generate an OAuth2 Authentication token",
+        "description": "To generate an OAuth2 Authentication token, pass the `clientKey` and `clientSecret` that was received during registeration",
+        "parameters": [
+          {
+            "name": "clientKey",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "XXX"
+            }
+          },
+          {
+            "name": "clientSecret",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "XXX"
+            }
+          },
+          {
+            "name": "grantType",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "CLIENT"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "XXX",
+              "default": "DSMS"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gAcessTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid grant type"
+          },
+          "401": {
+            "description": "Invalid client credentials clientKey or clientSecret"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "URI not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    },
+    "/sms/mt": {
+      "put": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "To update the buffered MT-SMS.",
+        "description": "Message that are in retry and not yet delivered can be updated/replaced by authorized SME",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "45567788"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gSendResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "Send an MT-SMS message to a single ME/Device.",
+        "description": "Any external authorized SMEs/Application can use the API to send `MT-SMS`. The mandatory parameter should be set for the message to be accepted. On successful accept `Msg-Id` will be returned as reference. The `Msg-Id` can be used for other operations as reference to that specific SMS",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Authorized SMEs can send MT-SMS",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gSendResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "To delete the buffered MT-SMS.",
+        "description": "Message that are in retry and not yet delivered can be deleted by authorized SME",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "123456"
+            }
+          },
+          {
+            "name": "oa",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "45567788"
+            }
+          },
+          {
+            "name": "da",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "45567788"
+            }
+          },
+          {
+            "name": "daType",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "iccid",
+                "msisdn",
+                "imsi"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gSendResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sms/mt/status": {
+      "get": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "Get details previously submitted status of MT-SMS.",
+        "description": "Message that are in retry or delivered can be queried by authorized SME",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "123456"
+            }
+          },
+          {
+            "name": "oa",
+            "in": "query",
+            "description": "Origination Address,",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "45567788"
+            }
+          },
+          {
+            "name": "da",
+            "in": "query",
+            "description": "Destination Address, If set daType should also be provided",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "45567788"
+            }
+          },
+          {
+            "name": "daType",
+            "in": "query",
+            "description": "Type of DA. Mandatory if da is present",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "iccid",
+                "msisdn",
+                "imsi"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gSendResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sms/mt/bulk": {
+      "post": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "Send MT-SMS in bulk.",
+        "description": "The external entity can initiate the bulk sms. Maximum 100 items. Each response will have object for corresponding request object that can be referenced with `seqNo`",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Authorized SMEs can send MT-SMS",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/mt_bulk_body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/gSendResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sms/mt/bulk/samemsg": {
+      "post": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "Send MT-SMS in bulk same User Data to Multiple Destionation.",
+        "description": "The external entity can initiate the bulk sms with same User Data to Multiple Destionation. Maximum 100 items. Each response will have object for corresponding index of DA's array in request object, that can be referenced with `seqNo`",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/bulk_samemsg_body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/gSendResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sms/mo": {
+      "post": {
+        "tags": [
+          "MESSAGE NOTIFY"
+        ],
+        "summary": "Notify MO-SMS on registered Call Back. Informative only and shouldn't be used by SME",
+        "description": "The service notifies the SME on registered `Callback`/`Webhook` with details of MO-SMS destined for SME endpoint. This definition is only for illustration purpose of the payload that will be sent to registered `Callback`/`Webhook`",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gMoSMSRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "http://localhost:8090/callback",
+            "description": "MO-SMS Webhook URI"
+          }
+        ]
+      }
+    },
+    "/sms/mt/dlr": {
+      "post": {
+        "tags": [
+          "MESSAGE NOTIFY"
+        ],
+        "summary": "MT-SMS DL-Report if request and callback registered.  Informative only and shouldn't be used by SME",
+        "description": "The service notifies the SME on registered `Callback`/`Webhook` with DL-Report of MT-SMS previously submitted by SME. This definition is only for illustration purpose of the payload that will be sent to registered `Callback`/`Webhook`",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gRequestDlrRpt"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "http://localhost:9090/callback",
+            "description": "MT-SMS DLR Webhook URI"
+          }
+        ]
+      }
+    },
+    "/onm/sms/cdr": {
+      "get": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Provides functionality to qurey transaction CDR.",
+        "description": "This API provide functionality to query SMSC to get he deliver CDRs specific filter provided in the query.Response JSON will be having an array of “RESPONSE” object indicating each transaction matching search criteria in request JSON.Maximum 1000 RESPONSE object can be carried in single response packet.Below are the fields description used in Request and Response.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "description": "Page Index",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "20"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "filter query object",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "ADDRESS",
+                    "FROM",
+                    "REQUEST_ID",
+                    "TO",
+                    "TYPE"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "TYPE": {
+                      "type": "string",
+                      "example": "GET_DELIVERS"
+                    },
+                    "ADDRESS": {
+                      "type": "string",
+                      "example": "6389612347"
+                    },
+                    "FROM": {
+                      "type": "string",
+                      "example": "01-01-2022 12:00:00"
+                    },
+                    "TO": {
+                      "type": "string",
+                      "example": "01-01-2022 12:30:00"
+                    },
+                    "REQUEST_ID": {
+                      "type": "string",
+                      "example": "34579348573845"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gCDR"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Data not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/onm/acl": {
+      "post": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Bulk Create/Update the ACL status of Subscriber(s).",
+        "description": "This API used to change the ACL status of Subscriber(whitelist and Blacklist).Multiple MSISDN request can be send in single request call (Max request data limit is 100) There will be one response object for each MSISDN on request.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/onm_acl_body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/acl/status": {
+      "post": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Bulk Get status Operation. Provides ACL status of the Subscriber(s).",
+        "description": "This API will provide the current ACL status of the MSISDN(s) or mapped External-Id(ext-Id) provided in the request. Query can be done for the Multiple MSISDNs/Ext-Id in single request (Max limit in one request is 100)There will be one response object for each MSISDN/Ext-Id in request.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/acl_status_body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/gAclStatusResp"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/acl/sub": {
+      "get": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Get the ACL status of Subscriber/ME.",
+        "description": "This API used to get the status of Subscriber (Whitelist and Blacklist). Response object provides detailed info.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "subId",
+            "in": "query",
+            "description": "Subscriber Identifier",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "6389612345"
+            }
+          },
+          {
+            "name": "subIdType",
+            "in": "query",
+            "description": "Subscriber Identifier Type",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "iccid",
+              "default": "iccid",
+              "enum": [
+                "iccid",
+                "msisdn",
+                "imsi"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Source of request",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "ccxyz"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gAclStatusResp"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "API used to update the ACL for Subscriber/ME.",
+        "description": "This API used to update the ACL for Subscriber.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "subId",
+            "in": "query",
+            "description": "Subscriber Identifier",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "6389612345"
+            }
+          },
+          {
+            "name": "subIdType",
+            "in": "query",
+            "description": "Subscriber Identifier Type",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "iccid",
+              "default": "iccid",
+              "enum": [
+                "iccid",
+                "msisdn",
+                "imsi"
+              ]
+            }
+          },
+          {
+            "name": "aclType",
+            "in": "query",
+            "description": "Access Control List Name",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "blackList",
+              "enum": [
+                "blackList",
+                "whiteList"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Source of request",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "ccxyz"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "API used to create the ACL for Subscriber/ME.",
+        "description": "This API used to create the ACL for Subscriber.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "subId",
+            "in": "query",
+            "description": "Subscriber Identifier",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "6389612345"
+            }
+          },
+          {
+            "name": "subIdType",
+            "in": "query",
+            "description": "Subscriber Identifier Type",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "iccid",
+              "default": "iccid",
+              "enum": [
+                "iccid",
+                "msisdn",
+                "imsi"
+              ]
+            }
+          },
+          {
+            "name": "aclType",
+            "in": "query",
+            "description": "Access Control List Name",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "blackList",
+              "enum": [
+                "blackList",
+                "whiteList"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Source of request",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "ccxyz"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/acl/sub/{subId}/history": {
+      "get": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "API provides the status change history of Subscriber.",
+        "description": "This API provides the status change history of Subscriber provided in the request.If FROM or/and TO not present the API will respond with all the history data limited by max recent 100 records.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "subId",
+            "in": "path",
+            "description": "Subscriber Identifier or ME",
+            "required": true,
+            "style": "simple",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "6389612347"
+            }
+          },
+          {
+            "name": "subIdType",
+            "in": "query",
+            "description": "Subscriber Identifier or ME Type",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "6389612347",
+              "default": "iccid",
+              "enum": [
+                "iccid",
+                "msisdn",
+                "imsi"
+              ]
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "description": "Page Index",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "20",
+              "default": "20"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Page size",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "01-08-2020"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Page size",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "05-08-2020"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gAclSubHistory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/tenant/{tenantId}": {
+      "get": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Returns Tenant Information.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gTenantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Update the Tenant Information.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "requestBody": {
+          "description": "Json Object with Tenant Details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Delete the Tenant.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/tenant": {
+      "post": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Creates the Tenant.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Json Object with Tenant Details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/tenant/{tenantId}/account/": {
+      "post": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Creates the client Account for a Tenant",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "requestBody": {
+          "description": "Json Object with Account Details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/tenant/{tenantId}/account/{accountId}": {
+      "get": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Get the client Account for a Tenant",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Update the client Account for a Tenant",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "requestBody": {
+          "description": "Json Object with Account Details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Delete the client Account for a Tenant",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/tenant/{tenantId}/subtenant/{subtenantId}": {
+      "get": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Returns the Sub Tenant Information.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          },
+          {
+            "name": "subtenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/gSubTenantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Updates the Sub Tenant Information",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          },
+          {
+            "name": "subtenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "requestBody": {
+          "description": "Json Object with SubTenant Details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gSubTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Delete the Sub Tenant.",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          },
+          {
+            "name": "subtenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/onm/tenant/{tenantId}/subtenant": {
+      "post": {
+        "tags": [
+          "OPERATIONAL"
+        ],
+        "summary": "Create the Sub Tentant",
+        "parameters": [
+          {
+            "name": "x-RequestId",
+            "in": "header",
+            "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "1122334455"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 919
+          }
+        ],
+        "requestBody": {
+          "description": "Json Object with SubTenant Details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/gSubTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-RequestId": {
+                "$ref": "#/components/headers/requestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_200_1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "401": {
+            "description": "Invalid access token"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Requested service currently unavailable"
+          }
+        }
+      }
+    },
+    "/kpi/summary": {
+      "get": {
+        "tags": [
+          "REPORTING"
+        ],
+        "summary": "Returns the summary of SMSC KPI in a given time interval for the given frequency.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/lFrequency"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Data not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/kpi/{frequency}": {
+      "get": {
+        "tags": [
+          "REPORTING"
+        ],
+        "summary": "Returns the SMSC KPI Information for the given frequency.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "frequency",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "min",
+                "day",
+                "month"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/lResponsePacket"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Data not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/kpi/getTentant/{tentantid}": {
+      "get": {
+        "tags": [
+          "REPORTING"
+        ],
+        "summary": "Returns the SMSC KPI information for the given UserId.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "tentantid",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "min",
+                "day",
+                "month"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/lResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Data not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/kpi/{typeofmsg}": {
+      "get": {
+        "tags": [
+          "REPORTING"
+        ],
+        "summary": "Returns the SMSC KPI information for the given TypeOfMessage.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "typeofmsg",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "A2P",
+                "A2A",
+                "P2A"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/lResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad data"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Data not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "gAcessTokenResponse": {
+        "required": [
+          "accessToken",
+          "tokenType"
+        ],
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "OAuth access token"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "OAuth token type"
+          },
+          "expiresIn": {
+            "type": "string",
+            "description": "OAuth expiry time in seconds. Tokens expire in one hour."
+          }
+        }
+      },
+      "gCDR": {
+        "required": [
+          "requestId",
+          "resultCode"
+        ],
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "example": "34579348573845"
+          },
+          "resultCode": {
+            "type": "string",
+            "example": "0"
+          },
+          "index": {
+            "type": "string",
+            "example": "1"
+          },
+          "limit": {
+            "type": "string",
+            "example": "1000"
+          },
+          "result": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "dataset": {
+            "$ref": "#/components/schemas/gCDRResponse"
+          }
+        }
+      },
+      "gCDRResponse": {
+        "required": [
+          "aNumber",
+          "bNumber",
+          "msgId"
+        ],
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/gCDRResponse_inner"
+        }
+      },
+      "gAclStatusResp": {
+        "required": [
+          "status",
+          "subId"
+        ],
+        "type": "object",
+        "properties": {
+          "subId": {
+            "type": "string",
+            "example": "6389612345"
+          },
+          "subIdType": {
+            "type": "string",
+            "example": "iccid",
+            "default": "iccid",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "example": "whitListed",
+            "enum": [
+              "whiteListed",
+              "blackListed"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "example": "04-09-2020 12:12:00"
+          }
+        }
+      },
+      "gAclSubHistory": {
+        "required": [
+          "aclType",
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "aclType": {
+            "type": "string",
+            "example": "whiteListed",
+            "enum": [
+              "whiteListed",
+              "blackListed"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "example": "ccxyz"
+          },
+          "date": {
+            "type": "string",
+            "example": "23-08-2020 22:30:00"
+          }
+        }
+      },
+      "gSendRequest": {
+        "required": [
+          "accountId",
+          "da",
+          "daType",
+          "oa",
+          "ud"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "0000XXXXX00"
+          },
+          "oa": {
+            "type": "string",
+            "example": "EG-NOTF"
+          },
+          "da": {
+            "type": "string",
+            "example": "45567788"
+          },
+          "daType": {
+            "type": "string",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          },
+          "seqNo": {
+            "type": "string",
+            "example": "128"
+          },
+          "sendAt": {
+            "pattern": "\\d{4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2}",
+            "type": "string",
+            "format": "date-time"
+          },
+          "udh": {
+            "type": "string",
+            "example": "2020"
+          },
+          "ud": {
+            "type": "string",
+            "example": "OTP for your Order"
+          },
+          "dcs": {
+            "type": "string",
+            "example": "4"
+          },
+          "pid": {
+            "type": "string",
+            "example": "0"
+          },
+          "validityPeriod": {
+            "type": "string",
+            "example": "100"
+          },
+          "registerDelivery": {
+            "type": "string",
+            "example": "0"
+          },
+          "dlrUri": {
+            "type": "string",
+            "example": "http://10.0.0.250:8765/DeliveryResp"
+          },
+          "serviceType": {
+            "type": "string",
+            "example": "WAP"
+          },
+          "oaTon": {
+            "type": "string",
+            "example": "2"
+          },
+          "daTon": {
+            "type": "string",
+            "example": "1"
+          },
+          "oaNpi": {
+            "type": "string",
+            "example": "0"
+          },
+          "daNpi": {
+            "type": "string",
+            "example": "0"
+          }
+        }
+      },
+      "gSendResponse": {
+        "required": [
+          "msgid",
+          "seqno"
+        ],
+        "type": "object",
+        "properties": {
+          "seqno": {
+            "type": "string",
+            "example": "124"
+          },
+          "msgid": {
+            "type": "string",
+            "example": "45567788"
+          },
+          "status": {
+            "type": "string",
+            "example": "0"
+          },
+          "diaginfo": {
+            "type": "string",
+            "example": "0"
+          },
+          "noOfSeg": {
+            "type": "string",
+            "example": "1"
+          },
+          "taskId": {
+            "type": "string",
+            "example": "tsk0001"
+          }
+        }
+      },
+      "gBulkRequest": {
+        "required": [
+          "accountId",
+          "da",
+          "oa",
+          "subIdType",
+          "ud"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "0000XXXXX00"
+          },
+          "oa": {
+            "type": "string",
+            "example": "35412345678"
+          },
+          "da": {
+            "type": "array",
+            "example": [
+              35412345678,
+              35412345679,
+              35412345690
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "daType": {
+            "type": "string",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          },
+          "udh": {
+            "type": "string",
+            "example": "2020"
+          },
+          "ud": {
+            "type": "string",
+            "example": "OTP for your Order"
+          },
+          "dcs": {
+            "type": "string",
+            "example": "4"
+          },
+          "pid": {
+            "type": "string",
+            "example": "0"
+          },
+          "validityPeriod": {
+            "type": "string",
+            "example": "100"
+          },
+          "registerDelivery": {
+            "type": "string",
+            "example": "0"
+          },
+          "dlrUri": {
+            "type": "string",
+            "example": "http://10.0.0.250:8765/DeliveryResp"
+          },
+          "serviceType": {
+            "type": "string",
+            "example": "WAP"
+          },
+          "oaTon": {
+            "type": "string",
+            "example": "2"
+          },
+          "daTon": {
+            "type": "string",
+            "example": "1"
+          },
+          "oaNpi": {
+            "type": "string",
+            "example": "0"
+          },
+          "daNpi": {
+            "type": "string",
+            "example": "0"
+          }
+        }
+      },
+      "gMoSMSRequest": {
+        "required": [
+          "accountId",
+          "da",
+          "daType",
+          "oa",
+          "ud"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "0000XXXXX00"
+          },
+          "oa": {
+            "type": "string",
+            "example": "EG-NOTF"
+          },
+          "da": {
+            "type": "string",
+            "example": "45567788"
+          },
+          "daType": {
+            "type": "string",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          },
+          "seqNo": {
+            "type": "string",
+            "example": "128"
+          },
+          "udh": {
+            "type": "string",
+            "example": "2020"
+          },
+          "ud": {
+            "type": "string",
+            "example": "OTP for your Order"
+          },
+          "dcs": {
+            "type": "string",
+            "example": "4"
+          },
+          "pid": {
+            "type": "string",
+            "example": "0"
+          },
+          "serviceType": {
+            "type": "string",
+            "example": "WAP"
+          },
+          "oaTon": {
+            "type": "string",
+            "example": "2"
+          },
+          "daTon": {
+            "type": "string",
+            "example": "1"
+          },
+          "oaNpi": {
+            "type": "string",
+            "example": "0"
+          },
+          "daNpi": {
+            "type": "string",
+            "example": "0"
+          }
+        }
+      },
+      "gRequestDlrRpt": {
+        "required": [
+          "msgId"
+        ],
+        "type": "object",
+        "properties": {
+          "msgId": {
+            "type": "string",
+            "example": "124"
+          },
+          "da": {
+            "type": "string",
+            "example": "124"
+          },
+          "daType": {
+            "type": "string",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          }
+        }
+      },
+      "gTenantRequest": {
+        "required": [
+          "tenantName",
+          "tenantType"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantName": {
+            "type": "string",
+            "example": "tntnABC"
+          },
+          "tenantId": {
+            "type": "string",
+            "example": "Auto Generated"
+          },
+          "tenantType": {
+            "type": "string",
+            "example": "Organization",
+            "enum": [
+              "Organization",
+              "SubTenant"
+            ]
+          },
+          "networkConfigurations": {
+            "$ref": "#/components/schemas/gNetworkConfigurations"
+          },
+          "messageConfigurations": {
+            "$ref": "#/components/schemas/gMessageConfigurations"
+          }
+        }
+      },
+      "gTenantResponse": {
+        "required": [
+          "tenantId",
+          "tenantName"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantName": {
+            "type": "string",
+            "example": "tntnABC"
+          },
+          "tenantId": {
+            "type": "string",
+            "example": "tnti0001"
+          },
+          "tenantType": {
+            "type": "string",
+            "example": "Organization",
+            "enum": [
+              "Organization",
+              "SubTenant"
+            ]
+          },
+          "networkConfigurations": {
+            "$ref": "#/components/schemas/gNetworkConfigurations"
+          },
+          "messageConfigurations": {
+            "$ref": "#/components/schemas/gMessageConfigurations"
+          }
+        }
+      },
+      "gNetworkConfigurations": {
+        "required": [
+          "extId",
+          "imsiSeries",
+          "msisdnSeries"
+        ],
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/gNetworkConfigurations_inner"
+        }
+      },
+      "gMessageConfigurations": {
+        "required": [
+          "apiAccess",
+          "listOfAPIServices"
+        ],
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/gMessageConfigurations_inner"
+        }
+      },
+      "gSubTenantRequest": {
+        "required": [
+          "parentTentantId",
+          "subTentantName"
+        ],
+        "type": "object",
+        "properties": {
+          "subTentantName": {
+            "type": "string",
+            "example": "sTntNAbc"
+          },
+          "subTentantId": {
+            "type": "string",
+            "example": "Auto Generated"
+          },
+          "parentTentantId": {
+            "type": "string",
+            "example": "xyzabc"
+          },
+          "tentantType": {
+            "type": "string",
+            "example": "SubOrganization"
+          },
+          "networkConfigurations": {
+            "$ref": "#/components/schemas/gSubNetworkConfigurations"
+          },
+          "messageConfigurations": {
+            "$ref": "#/components/schemas/gMessageConfigurations"
+          }
+        }
+      },
+      "gSubTenantResponse": {
+        "required": [
+          "parentTentantId",
+          "subTentantId",
+          "subTentantName"
+        ],
+        "type": "object",
+        "properties": {
+          "subTentantName": {
+            "type": "string",
+            "example": "sTntNAbc"
+          },
+          "subTentantId": {
+            "type": "string",
+            "example": "sTntI00012"
+          },
+          "parentTentantId": {
+            "type": "string",
+            "example": "tntI00012"
+          },
+          "tentantType": {
+            "type": "string",
+            "example": "SubOrganization"
+          },
+          "networkConfigurations": {
+            "$ref": "#/components/schemas/gSubNetworkConfigurations"
+          },
+          "messageConfigurations": {
+            "$ref": "#/components/schemas/gMessageConfigurations"
+          }
+        }
+      },
+      "gSubNetworkConfigurations": {
+        "required": [
+          "extID",
+          "imsiSeries",
+          "msisdnSeries"
+        ],
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/gSubNetworkConfigurations_inner"
+        }
+      },
+      "lResponse": {
+        "required": [
+          "statusWise",
+          "totalSMS"
+        ],
+        "type": "object",
+        "properties": {
+          "totalSMS": {
+            "type": "integer",
+            "example": 1238
+          },
+          "statusWise": {
+            "$ref": "#/components/schemas/gStatusWise"
+          },
+          "kpi": {
+            "$ref": "#/components/schemas/gKPI"
+          }
+        }
+      },
+      "lFrequency": {
+        "required": [
+          "TotalSMS",
+          "statusWise"
+        ],
+        "type": "object",
+        "properties": {
+          "TotalSMS": {
+            "type": "integer",
+            "example": 1238
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "statusWise": {
+            "$ref": "#/components/schemas/gStatusWise"
+          },
+          "kpi": {
+            "$ref": "#/components/schemas/gKPI"
+          }
+        }
+      },
+      "gStatusWise": {
+        "required": [
+          "buffered",
+          "delay",
+          "delivered",
+          "expired",
+          "nonDeliveredTemp",
+          "reattempt",
+          "rejected",
+          "submitted"
+        ],
+        "type": "object",
+        "properties": {
+          "submitted": {
+            "type": "integer",
+            "example": 1234
+          },
+          "delivered": {
+            "type": "integer",
+            "example": 6389
+          },
+          "expired": {
+            "type": "integer",
+            "example": 1394
+          },
+          "reattempt": {
+            "type": "integer",
+            "example": 4556
+          },
+          "rejected": {
+            "type": "integer",
+            "example": 4677
+          },
+          "nonDeliveredTemp": {
+            "type": "integer",
+            "example": 5677
+          },
+          "buffered": {
+            "type": "integer",
+            "example": 899
+          },
+          "delay": {
+            "type": "integer",
+            "example": 5567
+          }
+        }
+      },
+      "gKPI": {
+        "required": [
+          "attempts",
+          "failures",
+          "success"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "integer",
+            "example": 6388
+          },
+          "attempts": {
+            "type": "integer",
+            "example": 1223
+          },
+          "failures": {
+            "type": "integer",
+            "example": 123
+          },
+          "failurePerCode": {
+            "$ref": "#/components/schemas/lFailurePerCode"
+          }
+        }
+      },
+      "lFailurePerCode": {
+        "required": [
+          "failureRate",
+          "statusCode"
+        ],
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/lFailurePerCode_inner"
+        }
+      },
+      "lResponsePacket": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/lResponsePacket_inner"
+        }
+      },
+      "gAccountRequest": {
+        "required": [
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "45567788"
+          },
+          "status": {
+            "type": "string",
+            "example": "XXX"
+          },
+          "diagInfo": {
+            "type": "string",
+            "example": "0"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "FullName"
+          },
+          "password": {
+            "type": "string",
+            "example": "admin@123"
+          },
+          "userType": {
+            "type": "string",
+            "enum": [
+              "Transmitter"
+            ]
+          },
+          "connectionType": {
+            "type": "string",
+            "enum": [
+              "Server"
+            ]
+          },
+          "protocolType": {
+            "type": "string",
+            "enum": [
+              "SMPP",
+              "HTTP"
+            ]
+          },
+          "userStatus": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "InActive"
+            ]
+          },
+          "tenant": {
+            "type": "string",
+            "enum": [
+              "Select"
+            ]
+          },
+          "transportType": {
+            "type": "string",
+            "enum": [
+              "Select"
+            ]
+          },
+          "esmeNumber": {
+            "type": "string",
+            "example": "xxxx"
+          },
+          "blackoutStartTime": {
+            "type": "string",
+            "format": "date"
+          },
+          "blackoutEndTime": {
+            "type": "string",
+            "format": "date"
+          },
+          "quotaCheck": {
+            "type": "boolean"
+          },
+          "quotaName": {
+            "type": "string"
+          }
+        }
+      },
+      "gAccountResponse": {
+        "required": [
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "45567788"
+          },
+          "status": {
+            "type": "string",
+            "example": "XXX"
+          },
+          "diagInfo": {
+            "type": "string",
+            "example": "0"
+          }
+        }
+      },
+      "mt_bulk_body": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "example": "tsk0001"
+          },
+          "msg": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/gSendRequest"
+            }
+          }
+        }
+      },
+      "bulk_samemsg_body": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "example": "tsk0001"
+          },
+          "msg": {
+            "$ref": "#/components/schemas/gBulkRequest"
+          }
+        }
+      },
+      "onm_acl_body": {
+        "required": [
+          "aclType",
+          "source",
+          "subId"
+        ],
+        "type": "object",
+        "properties": {
+          "subId": {
+            "type": "array",
+            "example": [
+              6389612345,
+              6389612345
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "subIdType": {
+            "type": "string",
+            "example": "iccid",
+            "default": "iccid",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          },
+          "aclType": {
+            "type": "string",
+            "example": "blackList",
+            "enum": [
+              "blackList",
+              "whiteList"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "example": "ccxyz"
+          }
+        }
+      },
+      "acl_status_body": {
+        "required": [
+          "SubId"
+        ],
+        "type": "object",
+        "properties": {
+          "subId": {
+            "type": "array",
+            "example": [
+              6389612345,
+              6389612346,
+              6389612347
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "subIdType": {
+            "type": "string",
+            "example": "iccid",
+            "default": "iccid",
+            "enum": [
+              "iccid",
+              "msisdn",
+              "imsi"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "example": "ccxyz"
+          }
+        }
+      },
+      "inline_response_200": {
+        "required": [
+          "tenantId"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "example": "6389612345"
+          }
+        }
+      },
+      "inline_response_200_1": {
+        "required": [
+          "subTenantId"
+        ],
+        "type": "object",
+        "properties": {
+          "subTenantId": {
+            "type": "string",
+            "example": "6389612345"
+          }
+        }
+      },
+      "gCDRResponse_inner": {
+        "properties": {
+          "aNumber": {
+            "type": "string",
+            "example": "1234"
+          },
+          "bNumber": {
+            "type": "string",
+            "example": "6389612347"
+          },
+          "msgId": {
+            "type": "string",
+            "example": "1394358475839245"
+          },
+          "submitTime": {
+            "type": "string",
+            "example": "01-01-2022 12:30:00"
+          },
+          "deliverTime": {
+            "type": "string",
+            "example": "01-01-2022 12:30:00"
+          },
+          "status": {
+            "type": "string",
+            "example": "Delivered"
+          },
+          "retryCount": {
+            "type": "string",
+            "example": "0"
+          },
+          "userData": {
+            "type": "string",
+            "example": "Hi, Test SMS"
+          },
+          "userDataEncode": {
+            "type": "string",
+            "example": "0"
+          },
+          "flowType": {
+            "type": "string",
+            "example": "A2P"
+          }
+        }
+      },
+      "gNetworkConfigurations_inner": {
+        "properties": {
+          "msisdnSeries": {
+            "type": "array",
+            "description": "MSISDN Series List",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "imsiSeries": {
+            "type": "array",
+            "description": "IMSI Series List",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "extId": {
+            "type": "array",
+            "description": "External Reference Id List like ICCID",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "allocateGTs": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "smscVGT": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "mnpSupport": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "rn": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "configurationAcessPermissions": {
+            "type": "string",
+            "example": "4"
+          }
+        }
+      },
+      "gMessageConfigurations_inner": {
+        "properties": {
+          "allowedSMSFlows": {
+            "type": "string",
+            "enum": [
+              "A2P",
+              "P2P",
+              "BOTH"
+            ]
+          },
+          "mobileDeliveryReport": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "chargingSupport": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "moSubmissionCharge": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "a2pCharging": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "apiAccess": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "listOfAPIServices": {
+            "type": "string",
+            "example": "4"
+          }
+        }
+      },
+      "gSubNetworkConfigurations_inner": {
+        "properties": {
+          "msisdnSeries": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "imsiSeries": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "extID": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "allocateGT": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "smscVGT": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "mnpSupport": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "rn": {
+            "type": "array",
+            "example": [
+              "List"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "rnRange": {
+            "type": "string",
+            "example": "SubOrganization"
+          }
+        }
+      },
+      "lFailurePerCode_inner": {
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "example": 1234
+          },
+          "failureRate": {
+            "type": "integer",
+            "example": 1234
+          }
+        }
+      },
+      "lResponsePacket_inner": {
+        "properties": {
+          "response": {
+            "$ref": "#/components/schemas/lFrequency"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "requestId": {
+        "name": "x-RequestId",
+        "in": "header",
+        "description": "Request-Id for correlation of request and response. Same should be echoed in response",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "1122334455"
+        }
+      }
+    },
+    "headers": {
+      "requestId": {
+        "description": "Set x-RequestId value received in request packet header",
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "1122334455"
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
